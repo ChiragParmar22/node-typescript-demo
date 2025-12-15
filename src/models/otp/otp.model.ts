@@ -2,9 +2,9 @@ import mongoose, { Model, Schema, Document } from 'mongoose';
 import { ROLES } from '../../constants/key.constants';
 
 export interface OtpDocument extends Document {
-  email: string;
-  name: string;
-  otp: number;
+  email: String;
+  name: String;
+  otp: Number;
   role: ROLES;
   createdAt: Date;
 }

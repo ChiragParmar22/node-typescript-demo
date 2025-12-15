@@ -1,24 +1,28 @@
 import { Request } from 'express';
 import ApiResponse from '../util/ApiResponse';
 import responseMessages from '../constants/messages.constants';
-import BcryptjsUtil from '../util/bcryptjs/bcryptjs.util';
 import JwtUtil from '../util/jwt/jwt.util';
 import { removeLocalFile } from '../util/fileUtil/fileUpload';
 import UserRepository from '../repositories/user.repository';
-const userService: any = {};
+import { UserDocument } from '../models/user/user.model';
+const userService: Record<string, any> = {};
 
 /**
  * Update user profile
  * @param request
  * @returns
  */
-userService.updateProfile = async (request: Request) => {
-  const token = request.headers.authorization?.split(' ')[1];
-  let profileImage = request.file ? (request.file as any).path : '';
-  let profileImagePublicId = request.file ? (request.file as any).filename : '';
+userService.updateProfile = async (
+  request: any
+): Promise<ApiResponse | any> => {
+  const token: String = request.token;
+  let profileImage: String = request.file ? (request.file as any).path : '';
+  let profileImagePublicId: String = request.file
+    ? (request.file as any).filename
+    : '';
 
   try {
-    const body = { ...request.body, profileImage };
+    const body: any = { ...request.body, profileImage };
 
     if (profileImage && request['user'].profileImagePublicId) {
       await removeLocalFile(request['user'].profileImagePublicId);
@@ -29,7 +33,7 @@ userService.updateProfile = async (request: Request) => {
       profileImagePublicId = request['user'].profileImagePublicId;
     }
 
-    const userUpdatePaylod = {
+    const userUpdatePayload = {
       name: body.name,
       gender: body.gender,
       address: body.address,
@@ -41,9 +45,9 @@ userService.updateProfile = async (request: Request) => {
       profileImagePublicId,
     };
 
-    const updatedUser = await UserRepository.updateUser(
+    const updatedUser: UserDocument | any = await UserRepository.updateUser(
       { _id: request['user']._id },
-      userUpdatePaylod
+      userUpdatePayload
     );
 
     const responseData = {
@@ -59,7 +63,8 @@ userService.updateProfile = async (request: Request) => {
     };
 
     return ApiResponse.success(responseData, responseMessages.PROFILE_UPDATE);
-  } catch (error) {
+  } catch (error: any) {
+    console.error('==> userService.updateProfile', error);
     throw error;
   }
 };
@@ -69,16 +74,14 @@ userService.updateProfile = async (request: Request) => {
  * @param request
  * @returns
  */
-userService.changePassword = async (request: Request) => {
+userService.changePassword = async (
+  request: Request
+): Promise<ApiResponse | any> => {
   try {
-    const body = request.body;
-    const user = request['user'];
+    const body: any = request.body;
+    const user: UserDocument | any = request['user'];
 
-    const isOldPasswordSame = await BcryptjsUtil.comparePassword(
-      body.oldPassword,
-      user.hashedPassword,
-      user.salt
-    );
+    const isOldPasswordSame: boolean = body.currentPassword === user.password;
     if (!isOldPasswordSame) {
       return ApiResponse.badRequest(
         {},
@@ -86,15 +89,15 @@ userService.changePassword = async (request: Request) => {
       );
     }
 
-    const { hashedPassword, salt } = await BcryptjsUtil.hashPassword(
-      body.newPassword
-    );
-    const updatedUser = await UserRepository.updateUser(
+    const updatedUser: UserDocument | any = await UserRepository.updateUser(
       { _id: user._id },
-      { hashedPassword, salt, passwordChangedAt: Date.now() }
+      {
+        password: body.newPassword,
+        passwordChangedAt: Math.floor(Date.now() / 1000),
+      }
     );
 
-    const token = JwtUtil.generateToken({
+    const token: String = JwtUtil.generateToken({
       userId: updatedUser._id.toString(),
       role: updatedUser.role,
     });

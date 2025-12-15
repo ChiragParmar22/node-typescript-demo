@@ -19,6 +19,7 @@ export default {
   USER_NOT_FOUND_TOKEN: 'User not found or user is deleted.',
   PASSWORD_CHANGED_TOKEN: 'Password changed. Please login again.',
   TOKEN_EXPIRED: 'Token has expired. Please login again.',
+  TOKEN_REFRESHED_SUCCESS: 'Token refreshed successfully',
 
   // OTP
   REGISTRATION_OTP_SENT: 'Registration OTP sent successfully',

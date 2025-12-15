@@ -30,7 +30,7 @@ export = async (request: Request, response, next: NextFunction) => {
       });
     }
 
-    if (user.passwordChangedAt < decoded.iat) {
+    if (user.passwordChangedAt > decoded.iat) {
       return response.status(StatusCodes.UNAUTHORIZED).json({
         data: {},
         message: responseMessages.PASSWORD_CHANGED_TOKEN,

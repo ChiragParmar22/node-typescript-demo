@@ -8,7 +8,9 @@ userRepository.createUser = async (
   return await UserModel.create(payload);
 };
 
-userRepository.findUserById = async (id: string) => {
+userRepository.findUserById = async (
+  id: String
+): Promise<UserDocument | null> => {
   return await UserModel.findOne({
     _id: id,
     isActive: true,
@@ -17,7 +19,7 @@ userRepository.findUserById = async (id: string) => {
 };
 
 userRepository.findUserByEmail = async (
-  email: string,
+  email: String,
   role: ROLES
 ): Promise<UserDocument | null> => {
   return await UserModel.findOne({
@@ -28,7 +30,10 @@ userRepository.findUserByEmail = async (
   });
 };
 
-userRepository.updateUser = async (filter: any, payload: any) => {
+userRepository.updateUser = async (
+  filter: any,
+  payload: any
+): Promise<UserDocument | any> => {
   return await UserModel.findOneAndUpdate(filter, payload, { new: true });
 };
 

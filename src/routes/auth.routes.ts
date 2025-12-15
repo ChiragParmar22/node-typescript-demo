@@ -14,10 +14,28 @@ authRoutes.post(
 authRoutes.post(
   '/register',
   upload.single('profileImage'),
+  routeMiddlewares.validateRequest(userValidation.registerUserSchema),
   authController.registerUser
 );
-authRoutes.post('/login', authController.loginUser);
-authRoutes.post('/forgotPassword', authController.sendForgotPasswordOtp);
-authRoutes.post('/resetPassword', authController.resetPassword);
+authRoutes.post(
+  '/login',
+  routeMiddlewares.validateRequest(userValidation.loginUserSchema),
+  authController.loginUser
+);
+authRoutes.post(
+  '/forgotPassword',
+  routeMiddlewares.validateRequest(userValidation.forgotPasswordSchema),
+  authController.sendForgotPasswordOtp
+);
+authRoutes.post(
+  '/resetPassword',
+  routeMiddlewares.validateRequest(userValidation.resetPasswordSchema),
+  authController.resetPassword
+);
+authRoutes.post(
+  '/refreshToken',
+  routeMiddlewares.validateRequest(userValidation.refreshTokenSchema),
+  authController.refreshToken
+);
 
 export default authRoutes;

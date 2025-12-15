@@ -1,20 +1,20 @@
 import { Request } from 'express';
 import ApiResponse from '../util/ApiResponse';
 import responseMessages from '../constants/messages.constants';
-import BcryptjsUtil from '../util/bcryptjs/bcryptjs.util';
 import JwtUtil from '../util/jwt/jwt.util';
 import CommonFunctions from '../util/commonFunctions';
 import { removeLocalFile } from '../util/fileUtil/fileUpload';
-// import {
-//   registerOtpEmailContent,
-//   forgotPasswordEmailContent,
-// } from '../util/email/emailContent';
-// import { sendEmail } from '../util/email/sendEmail';
+import {
+  registerOtpEmailContent,
+  forgotPasswordEmailContent,
+} from '../util/email/emailContent';
+import { sendEmail } from '../util/email/sendEmail';
 import UserRepository from '../repositories/user.repository';
 import OtpRepository from '../repositories/otp.repository';
 import { SendOtpInterface } from '../models/otp/_interface/otp.interface';
-import { UserDocument } from '../models/user/user.model';
 import { OtpDocument } from '../models/otp/otp.model';
+import { UserDocument } from '../models/user/user.model';
+import { userLoginResponse } from '../models/user/_interface/user.interface';
 const authService: any = {};
 
 /**
@@ -26,15 +26,16 @@ authService.sendOtp = async (request: Request): Promise<ApiResponse | any> => {
   try {
     const body: SendOtpInterface = request.body;
 
-    const existingUser: UserDocument | null =
+    const existingUser: UserDocument | any =
       await UserRepository.findUserByEmail(body.email, body.role);
+
     if (existingUser) {
       return ApiResponse.conflict(responseMessages.USER_EXIST);
     }
 
     const otp: Number = CommonFunctions.generateOtp();
 
-    const existingOtp: OtpDocument | null = await OtpRepository.findOtpByEmail(
+    const existingOtp: OtpDocument | any = await OtpRepository.findOtpByEmail(
       body.email,
       body.role
     );
@@ -49,8 +50,11 @@ authService.sendOtp = async (request: Request): Promise<ApiResponse | any> => {
       });
     }
 
-    // const emailContent = registerOtpEmailContent(body.name, otp);
-    // await sendEmail(body.email, 'Registration email', emailContent);
+    const emailContent = registerOtpEmailContent(
+      body.name as string,
+      otp as number
+    );
+    await sendEmail(body.email as string, 'Registration email', emailContent);
 
     return ApiResponse.success({}, responseMessages.REGISTRATION_OTP_SENT);
   } catch (error) {
@@ -63,7 +67,9 @@ authService.sendOtp = async (request: Request): Promise<ApiResponse | any> => {
  * @param request
  * @returns
  */
-authService.registerUser = async (request: Request) => {
+authService.registerUser = async (
+  request: Request
+): Promise<ApiResponse | any> => {
   const deviceType = request.body.deviceType;
   const profileImage = request.file ? (request.file as any).path : '';
   const profileImagePublicId = request.file
@@ -74,31 +80,26 @@ authService.registerUser = async (request: Request) => {
   try {
     const body = { ...request.body, deviceType };
 
-    const existingUser = await UserRepository.findUserByEmail(
-      body.email,
-      body.role
-    );
+    const existingUser: UserDocument | any =
+      await UserRepository.findUserByEmail(body.email, body.role);
     if (existingUser) {
       removeLocalFile(profileImagePublicId);
       return ApiResponse.conflict(responseMessages.USER_EXIST);
     }
 
-    const existingOtp = await OtpRepository.findOtpByEmail(
+    const existingOtp: OtpDocument | any = await OtpRepository.findOtpByEmail(
       body.email,
       body.role
     );
-    if (!existingOtp || existingOtp.otp !== body.otp) {
+
+    if (!existingOtp || existingOtp.otp !== Number(body.otp)) {
       removeLocalFile(profileImagePublicId);
       return ApiResponse.badRequest(responseMessages.INVALID_OTP);
     }
 
     await OtpRepository.removeOtp(body.email, body.role);
 
-    const { hashedPassword, salt } = await BcryptjsUtil.hashPassword(
-      body.password
-    );
-
-    const userPaylod = {
+    const userPayload = {
       name: body.name,
       gender: body.gender,
       address: body.address,
@@ -108,8 +109,7 @@ authService.registerUser = async (request: Request) => {
       },
       phone: body.phone,
       email: body.email.toLowerCase(),
-      salt,
-      hashedPassword,
+      password: body.password,
       role: body.role,
       profileImage,
       profileImagePublicId,
@@ -119,13 +119,15 @@ authService.registerUser = async (request: Request) => {
       lastLoginDate: new Date(),
     };
 
-    const user = await UserRepository.createUser(userPaylod);
-    const token = JwtUtil.generateToken({
+    const user: UserDocument | any =
+      await UserRepository.createUser(userPayload);
+
+    const token: String = JwtUtil.generateToken({
       userId: user._id.toString(),
       role: body.role,
     });
 
-    const responseData = {
+    const responseData: userLoginResponse = {
       _id: user._id,
       name: user.name,
       gender: user.gender,
@@ -152,24 +154,21 @@ authService.registerUser = async (request: Request) => {
  * @param request
  * @returns
  */
-authService.loginUser = async (request: Request) => {
+authService.loginUser = async (
+  request: Request
+): Promise<ApiResponse | any> => {
   try {
     const deviceType = request.body.deviceType;
     const body = { ...request.body, deviceType };
 
-    const existingUser = await UserRepository.findUserByEmail(
-      body.email,
-      body.role
-    );
+    const existingUser: UserDocument | null =
+      await UserRepository.findUserByEmail(body.email, body.role);
     if (!existingUser) {
       return ApiResponse.notFound(responseMessages.USER_NOT_FOUND_EMAIL);
     }
 
-    const isPasswordValid = await BcryptjsUtil.comparePassword(
-      body.password,
-      existingUser.hashedPassword,
-      existingUser.salt
-    );
+    const isPasswordValid: boolean = body.password === existingUser.password;
+
     if (!isPasswordValid) {
       return ApiResponse.unauthorized(responseMessages.INVALID_CREDENTIALS);
     }
@@ -179,17 +178,18 @@ authService.loginUser = async (request: Request) => {
       {
         deviceType,
         deviceToken: body.deviceToken,
-        loginCount: existingUser.loginCount + 1,
+
+        loginCount: Number(existingUser.loginCount) + 1,
         lastLoginDate: new Date(),
       }
     );
 
-    const token = JwtUtil.generateToken({
+    const token: string = JwtUtil.generateToken({
       userId: existingUser._id.toString(),
       role: body.role,
     });
 
-    const responseData = {
+    const responseData: userLoginResponse = {
       _id: existingUser._id,
       name: existingUser.name,
       gender: existingUser.gender,
@@ -213,21 +213,21 @@ authService.loginUser = async (request: Request) => {
  * @param request
  * @returns
  */
-authService.sendForgotPasswordOtp = async (request: Request) => {
+authService.sendForgotPasswordOtp = async (
+  request: Request
+): Promise<ApiResponse | any> => {
   try {
     const body = request.body;
 
-    const existingUser = await UserRepository.findUserByEmail(
-      body.email,
-      body.role
-    );
+    const existingUser: UserDocument | null =
+      await UserRepository.findUserByEmail(body.email, body.role);
     if (!existingUser) {
       return ApiResponse.notFound(responseMessages.USER_NOT_FOUND_EMAIL);
     }
 
-    const otp = CommonFunctions.generateOtp();
+    const otp: Number = CommonFunctions.generateOtp();
 
-    const existingOtp = await OtpRepository.findOtpByEmail(
+    const existingOtp: OtpDocument | null = await OtpRepository.findOtpByEmail(
       body.email,
       body.role
     );
@@ -242,8 +242,15 @@ authService.sendForgotPasswordOtp = async (request: Request) => {
       });
     }
 
-    // const emailContent = forgotPasswordEmailContent(existingUser.name, otp);
-    // await sendEmail(body.email, 'Forgot password email', emailContent);
+    const emailContent = forgotPasswordEmailContent(
+      existingUser.name as string,
+      otp as number
+    );
+    await sendEmail(
+      body.email as string,
+      'Forgot password email',
+      emailContent
+    );
 
     return ApiResponse.success({}, responseMessages.FORGOT_PASSWORD_OTP_SENT);
   } catch (error) {
@@ -256,43 +263,40 @@ authService.sendForgotPasswordOtp = async (request: Request) => {
  * @param request
  * @returns
  */
-authService.resetPassword = async (request: Request) => {
+authService.resetPassword = async (
+  request: Request
+): Promise<ApiResponse | any> => {
   try {
     const body = request.body;
 
-    const existingUser = await UserRepository.findUserByEmail(
-      body.email,
-      body.role
-    );
+    const existingUser: UserDocument | any =
+      await UserRepository.findUserByEmail(body.email, body.role);
     if (!existingUser) {
       return ApiResponse.notFound(responseMessages.USER_NOT_FOUND_EMAIL);
     }
 
-    const existingOtp = await OtpRepository.findOtpByEmail(
+    const existingOtp: OtpDocument | any = await OtpRepository.findOtpByEmail(
       body.email,
       body.role
     );
-    if (!existingOtp || existingOtp.otp !== body.otp) {
+
+    if (!existingOtp || existingOtp.otp !== Number(body.otp)) {
       return ApiResponse.badRequest(responseMessages.INVALID_OTP);
     }
 
-    const isOldPasswordSame = await BcryptjsUtil.comparePassword(
-      body.password,
-      existingUser.hashedPassword,
-      existingUser.salt
-    );
+    const isOldPasswordSame: Boolean = body.password === existingUser.password;
     if (isOldPasswordSame) {
       return ApiResponse.badRequest(responseMessages.NEW_PASSWORD_SAME);
     }
 
     await OtpRepository.removeOtp(body.email, body.role);
 
-    const { hashedPassword, salt } = await BcryptjsUtil.hashPassword(
-      body.password
-    );
     await UserRepository.updateUser(
       { _id: existingUser._id },
-      { hashedPassword, salt }
+      {
+        password: body.newPassword,
+        passwordChangedAt: Math.floor(Date.now() / 1000),
+      }
     );
 
     return ApiResponse.success(responseMessages.PASSWORD_RESET_SUCCESS);
@@ -307,73 +311,33 @@ authService.resetPassword = async (request: Request) => {
  * @param response
  * @returns
  */
-//  authService.refreshToken=async(request: Request, response: Response) =>{
-//   const token = request.headers.authorization?.split(' ')[1];
-//   if (!token) {
-//     return response.status(StatusCodes.UNAUTHORIZED).json({
-//       data: {},
-//       message: responseMessages.REFRESH_TOKEN_REQUIRED,
-//     });
-//   }
+authService.refreshToken = async (
+  request: Request
+): Promise<ApiResponse | any> => {
+  try {
+    const { userId } = request.body;
+    const user: UserDocument | any = await UserRepository.findUserById(
+      userId as string
+    );
+    if (!user) {
+      return ApiResponse.notFound(responseMessages.USER_NOT_FOUND_TOKEN);
+    }
 
-//   try {
-//     const decoded = await JwtUtil.verifyRefreshToken(token);
-//     if (!decoded || !decoded.userId) {
-//       return response.status(StatusCodes.UNAUTHORIZED).json({
-//         data: {},
-//         message: responseMessages.INVALID_REFRESH_TOKEN,
-//       });
-//     }
+    const newToken: String = JwtUtil.generateToken({
+      userId: userId,
+    });
 
-//     const user = await UserRepository.findUserByEmail(
-//       decoded.userId,
-//       decoded.role
-//     );
-//     if (!user) {
-//       return response.status(StatusCodes.NOT_FOUND).json({
-//         data: {},
-//         message: responseMessages.USER_NOT_FOUND_TOKEN,
-//       });
-//     }
+    return ApiResponse.success(
+      {
+        token: newToken,
+      },
+      responseMessages.TOKEN_REFRESHED_SUCCESS
+    );
+  } catch (error: any) {
+    console.error('==> authService.refreshToken', error);
 
-//     if (user.passwordChangedAt < decoded.iat) {
-//       return response.status(StatusCodes.UNAUTHORIZED).json({
-//         data: {},
-//         message: responseMessages.PASSWORD_CHANGED_TOKEN,
-//       });
-//     }
-
-//     const newToken = JwtUtil.generateToken({
-//       userId: decoded.userId,
-//       role: decoded.role,
-//     });
-//     const newRefreshToken = JwtUtil.generateRefreshToken({
-//       userId: decoded.userId,
-//       role: decoded.role,
-//     });
-
-//     return response.status(StatusCodes.OK).json({
-//       data: {
-//         token: newToken,
-//         refreshToken: newRefreshToken,
-//       },
-//       message: responseMessages.TOKEN_REFRESHED,
-//     });
-//   } catch (error: any) {
-//     console.log('==========> error', error);
-
-//     if (error.name === 'TokenExpiredError') {
-//       return response.status(StatusCodes.UNAUTHORIZED).json({
-//         data: {},
-//         message: responseMessages.REFRESH_TOKEN_EXPIRED,
-//       });
-//     }
-
-//     return response.status(StatusCodes.UNAUTHORIZED).json({
-//       data: {},
-//       message: responseMessages.INTERNAL_SERVER_ERROR,
-//     });
-//   }
-// }
+    return ApiResponse.badRequest(responseMessages.INTERNAL_SERVER_ERROR);
+  }
+};
 
 export default authService;

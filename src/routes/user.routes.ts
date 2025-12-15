@@ -3,7 +3,7 @@ import { upload } from '../util/fileUtil/fileUpload';
 import routeMiddlewares from '../middleware/routeMiddleware';
 import userValidation from '../validations/user.validation';
 import authorize from '../middleware/auth.middleware';
-import userService from '../services/user.service';
+import userController from '../controllers/user.controller';
 
 const userRoutes = express.Router();
 
@@ -12,12 +12,12 @@ userRoutes.post(
   '/updateProfile',
   upload.single('profileImage'),
   routeMiddlewares.validateRequest(userValidation.updateProfileSchema),
-  userService.updateProfile
+  userController.updateProfile
 );
 userRoutes.post(
   '/changePassword',
   routeMiddlewares.validateRequest(userValidation.changePasswordSchema),
-  userService.changePassword
+  userController.changePassword
 );
 
 export default userRoutes;

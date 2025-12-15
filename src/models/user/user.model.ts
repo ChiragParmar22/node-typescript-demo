@@ -9,26 +9,25 @@ import {
 
 export interface UserDocument extends Document {
   _id: mongoose.Types.ObjectId;
-  name: string;
+  name: String;
   gender: GENDER;
-  address: string;
+  address: String;
   location: LocationData;
   profileImage: string;
   profileImagePublicId: string;
-  phone: number;
-  email: string;
-  salt: string;
-  hashedPassword: string;
+  phone: Number;
+  email: String;
+  password: String;
   role: ROLES;
   status: USER_STATUS;
-  passwordChangedAt: number;
+  passwordChangedAt: Number;
   lastLoginDate: Date;
-  loginCount: number;
+  loginCount: Number;
   deviceType: DEVICE_TYPE;
-  deviceToken: string;
+  deviceToken: String;
   isActive: Boolean;
   isDeleted: Boolean;
-  deletedReason: string;
+  deletedReason: String;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date;
@@ -75,11 +74,7 @@ const userSchema: Schema<UserDocument> = new Schema<UserDocument>(
       required: true,
       lowercase: true,
     },
-    salt: {
-      type: String,
-      required: false,
-    },
-    hashedPassword: {
+    password: {
       type: String,
       required: true,
     },

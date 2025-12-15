@@ -23,7 +23,7 @@ authController.registerUser = async (
   next: NextFunction
 ) => {
   try {
-    const apiResponse = authService.registerUser(request);
+    const apiResponse = await authService.registerUser(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.registerUser', error);
@@ -37,7 +37,7 @@ authController.loginUser = async (
   next: NextFunction
 ) => {
   try {
-    const apiResponse = authService.loginUser(request);
+    const apiResponse = await authService.loginUser(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.loginUser', error);
@@ -51,7 +51,7 @@ authController.sendForgotPasswordOtp = async (
   next: NextFunction
 ) => {
   try {
-    const apiResponse = authService.sendForgotPasswordOtp(request);
+    const apiResponse = await authService.sendForgotPasswordOtp(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.sendForgotPasswordOtp', error);
@@ -65,10 +65,24 @@ authController.resetPassword = async (
   next: NextFunction
 ) => {
   try {
-    const apiResponse = authService.resetPassword(request);
+    const apiResponse = await authService.resetPassword(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.resetPassword', error);
+    return next(ApiResponse.badRequest(error));
+  }
+};
+
+authController.refreshToken = async (
+  request: Request,
+  response: Response,
+  next: NextFunction
+) => {
+  try {
+    const apiResponse = await authService.refreshToken(request);
+    return response.status(apiResponse.statusCode).send(apiResponse);
+  } catch (error: any) {
+    console.error('==> authController.refreshToken', error);
     return next(ApiResponse.badRequest(error));
   }
 };
