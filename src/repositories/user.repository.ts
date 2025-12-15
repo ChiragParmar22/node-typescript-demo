@@ -1,3 +1,4 @@
+import { ROLES } from '../constants/key.constants';
 import { UserDocument, UserModel } from '../models/user/user.model';
 const userRepository: any = {};
 
@@ -15,7 +16,10 @@ userRepository.findUserById = async (id: string) => {
   }).select('-password -__v -deletedAt');
 };
 
-userRepository.findUserByEmail = async (email: string, role: string) => {
+userRepository.findUserByEmail = async (
+  email: string,
+  role: ROLES
+): Promise<UserDocument | null> => {
   return await UserModel.findOne({
     email,
     role,

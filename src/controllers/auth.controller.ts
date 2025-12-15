@@ -1,15 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import ApiResponse from '../util/ApiResponse';
-import userService from '../services/auth.service';
+import authService from '../services/auth.service';
 const authController: any = {};
 
 authController.sendOtp = async (
   request: Request,
   response: Response,
   next: NextFunction
-) => {
+): Promise<ApiResponse | any> => {
   try {
-    const apiResponse = await userService.sendOtp(request);
+    const apiResponse = await authService.sendOtp(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.sendOtp', error);
@@ -23,7 +23,7 @@ authController.registerUser = async (
   next: NextFunction
 ) => {
   try {
-    const apiResponse = userService.registerUser(request);
+    const apiResponse = authService.registerUser(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.registerUser', error);
@@ -37,7 +37,7 @@ authController.loginUser = async (
   next: NextFunction
 ) => {
   try {
-    const apiResponse = userService.loginUser(request);
+    const apiResponse = authService.loginUser(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.loginUser', error);
@@ -51,7 +51,7 @@ authController.sendForgotPasswordOtp = async (
   next: NextFunction
 ) => {
   try {
-    const apiResponse = userService.sendForgotPasswordOtp(request);
+    const apiResponse = authService.sendForgotPasswordOtp(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.sendForgotPasswordOtp', error);
@@ -65,7 +65,7 @@ authController.resetPassword = async (
   next: NextFunction
 ) => {
   try {
-    const apiResponse = userService.resetPassword(request);
+    const apiResponse = authService.resetPassword(request);
     return response.status(apiResponse.statusCode).send(apiResponse);
   } catch (error: any) {
     console.error('==> authController.resetPassword', error);

@@ -1,4 +1,5 @@
 import Joi from 'joi';
+import { ROLES } from '../constants/key.constants';
 const userValidation: any = {};
 
 const passwordFormat =
@@ -10,7 +11,7 @@ userValidation.sendOtpSchema = {
   body: Joi.object({
     name: Joi.string().required(),
     email: Joi.string().required(),
-    role: Joi.string().valid('user', 'serviceProvider').required(),
+    role: Joi.string().valid(ROLES.USER, ROLES.SERVICE_PROVIDER).required(),
   }),
 };
 

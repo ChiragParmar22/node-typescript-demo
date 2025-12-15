@@ -1,5 +1,5 @@
 export default class CommonFunctions {
-  static generateOtp(length = 4) {
+  static generateOtp(length = 4): Number {
     const digits = '123456789';
     let otp = '';
 

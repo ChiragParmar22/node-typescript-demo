@@ -12,6 +12,9 @@ import { removeLocalFile } from '../util/fileUtil/fileUpload';
 // import { sendEmail } from '../util/email/sendEmail';
 import UserRepository from '../repositories/user.repository';
 import OtpRepository from '../repositories/otp.repository';
+import { SendOtpInterface } from '../models/otp/_interface/otp.interface';
+import { UserDocument } from '../models/user/user.model';
+import { OtpDocument } from '../models/otp/otp.model';
 const authService: any = {};
 
 /**
@@ -19,21 +22,19 @@ const authService: any = {};
  * @param request
  * @returns
  */
-authService.sendOtp = async (request: Request) => {
+authService.sendOtp = async (request: Request): Promise<ApiResponse | any> => {
   try {
-    const body = request.body;
+    const body: SendOtpInterface = request.body;
 
-    const existingUser = await UserRepository.findUserByEmail(
-      body.email,
-      body.role
-    );
+    const existingUser: UserDocument | null =
+      await UserRepository.findUserByEmail(body.email, body.role);
     if (existingUser) {
       return ApiResponse.conflict(responseMessages.USER_EXIST);
     }
 
-    const otp = CommonFunctions.generateOtp();
+    const otp: Number = CommonFunctions.generateOtp();
 
-    const existingOtp = await OtpRepository.findOtpByEmail(
+    const existingOtp: OtpDocument | null = await OtpRepository.findOtpByEmail(
       body.email,
       body.role
     );
